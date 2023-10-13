@@ -49,16 +49,26 @@ public class TaskController {
 
     // localhost:8080/tasks/djskdjskj-e9eeker-eeoero
     @PutMapping("/{id}")
-    public TaskModel update(@RequestBody TaskModel taskModel, @PathVariable UUID id, HttpServletRequest request) {
+    public ResponseEntity<?> update(@RequestBody TaskModel taskModel, @PathVariable UUID id, HttpServletRequest request) {
         var idUser = request.getAttribute("idUser");
-
         var task = this.taskRepository.findById(id).orElse(null);
+
+        if(task == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Tarefa nao encontrada.");
+        }
+
+        if(!task.getIdUser().equals(idUser)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Usuario no autorizado a modifcar esa tarefa");
+        }
 
         Utils.copyNonNullProperties(taskModel, task);
         // usando ese copy no necesito más lo de abajo:
         // copia todas las propiedades del objeto que faltan en el PUT
 //        taskModel.setIdUser((UUID) idUser);
 //        taskModel.setId(id);
-        return this.taskRepository.save(task);
+        var taskUpdated = this.taskRepository.save(task);
+        return ResponseEntity.ok().body(taskUpdated) ;
     }
 }
